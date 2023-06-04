@@ -34,16 +34,14 @@ import okhttp3.Response;
 
 public class MainActivity extends AppCompatActivity implements InputDialog.InputDialogListener {
 
-
-
     String ecg3;
     String ecg2;
     String ecg1;
     double buff;
     double buff2;
     double buff3;
-    String IP;
-    int start;
+    String IP, Time;
+    int start, Sec, Min;
 
     public int i;
     LineChart mChart;
@@ -52,12 +50,15 @@ public class MainActivity extends AppCompatActivity implements InputDialog.Input
 
     Handler handler = new Handler();
     Runnable runnable;
+    Runnable time;
     int delay = 40;
 
     int color[] = {Color.MAGENTA, Color.BLUE, Color.YELLOW, Color.BLACK};
 
     private TextView IPaddrView;
     private ImageView SetIP;
+    private ImageView Start;
+    private TextView TimerView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -70,7 +71,16 @@ public class MainActivity extends AppCompatActivity implements InputDialog.Input
         setContentView(R.layout.activity_main);
 
         IPaddrView = (TextView) findViewById(R.id.IPaddr);
+        TimerView = (TextView) findViewById(R.id.Timer);
         SetIP = (ImageView) findViewById(R.id.SetIP);
+        Start = (ImageView) findViewById(R.id.Start);
+
+        Start.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                start = 1;
+            }
+        });
         SetIP.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -124,6 +134,16 @@ public class MainActivity extends AppCompatActivity implements InputDialog.Input
 
     }
 
+    public void timer() {
+
+        if (start == 1) {
+            Sec++;
+            if (Sec == 60) {
+                Min++;
+                Sec = 0;
+            }
+        }
+    }
 
     private void addEntry(int input, int ecg3, int color) {
 
@@ -138,13 +158,13 @@ public class MainActivity extends AppCompatActivity implements InputDialog.Input
             ILineDataSet set3 = data.getDataSetByIndex(2);
 
             if (set == null) {
-                set= createSet(color);
+                set = createSet(color);
                 data.addDataSet(set);
 
-                set2= createSet(color);
+                set2 = createSet(color);
                 data2.addDataSet(set2);
 
-                set3= createSet(color);
+                set3 = createSet(color);
                 data3.addDataSet(set3);
             }
 
@@ -170,8 +190,9 @@ public class MainActivity extends AppCompatActivity implements InputDialog.Input
 
     public void openDialog() {
         InputDialog exampleDialog = new InputDialog();
-        exampleDialog.show(getSupportFragmentManager(),"IP Address");
+        exampleDialog.show(getSupportFragmentManager(), "IP Address");
     }
+
 
     private LineDataSet createSet(int color) {
         LineDataSet set;
@@ -297,13 +318,34 @@ public class MainActivity extends AppCompatActivity implements InputDialog.Input
     }
 
     protected void onResume() {
+        handler.postDelayed(time = new Runnable() {
+            public void run() {
+                handler.postDelayed(time, 1000);
+                timer();
+                String sec = String.valueOf(Sec);
+                String min = String.valueOf(Min);
+                if (Sec < 10) {
+                    sec = "0" + Sec;
+                }
+                if (Min < 10) {
+                    min = "0" + Min;
+                }
+                String Time = min + ":" + sec;
+                if (Min > 4) {
+                    Min = 0;
+                    Sec = 0;
+                    start = 0;
+                }
+                TimerView.setText(Time);
+            }
+        }, 1000);
         handler.postDelayed(runnable = new Runnable() {
             public void run() {
                 handler.postDelayed(runnable, delay);
                 //if (start == 1){
-                    data(1,IP,"/ECG1");
-                    data2(2,IP,"/ECG2");
-                    data3(3,IP,"/ECG3");
+                data(1, IP, "/ECG1");
+                data2(2, IP, "/ECG2");
+                data3(3, IP, "/ECG3");
                 //}
             }
         }, delay);
@@ -318,7 +360,6 @@ public class MainActivity extends AppCompatActivity implements InputDialog.Input
     @Override
     public String applyText(String IPaddr) {
         IP = IPaddr;
-        start = 1;
         String s = "/ECG1";
         String f = "http://" + IPaddr + s;
         IPaddrView.setText(IP);
